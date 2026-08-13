@@ -1,53 +1,110 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <ctype.h>
 
 #define MAX 100
 
-int stack[MAX];
+char stack[MAX];
 int top = -1;
 
-// Push element into stack
-void push(int value)
+// Push character into stack
+void push(char ch)
 {
-    if (top == MAX - 1)
-    {
-        printf("Stack Overflow\n");
-        return;
-    }
-
-    stack[++top] = value;
+    stack[++top] = ch;
 }
 
-// Pop element from stack
-int pop()
+// Pop character from stack
+char pop()
 {
-    if (top == -1)
+    return stack[top--];
+}
+
+// Return priority of operators
+int priority(char ch)
+{
+    if (ch == '+' || ch == '-')
+        return 1;
+
+    if (ch == '*' || ch == '/' || ch == '%')
+        return 2;
+
+    if (ch == '^')
+        return 3;
+
+    return 0;
+}
+
+// Convert infix expression to postfix
+void infixToPostfix(char infix[], char postfix[])
+{
+    int i, j = 0;
+    char ch;
+
+    for (i = 0; infix[i] != '\0'; i++)
     {
-        printf("Stack Underflow\n");
-        exit(1);
+        ch = infix[i];
+
+        // If operand, add it directly to postfix
+        if (isdigit(ch))
+        {
+            postfix[j++] = ch;
+        }
+
+        // If opening bracket, push it
+        else if (ch == '(')
+        {
+            push(ch);
+        }
+
+        // If closing bracket, pop until '('
+        else if (ch == ')')
+        {
+            while (top != -1 && stack[top] != '(')
+                postfix[j++] = pop();
+
+            pop(); // Remove '('
+        }
+
+        // If operator, handle according to priority
+        else
+        {
+            while (top != -1 &&
+                   stack[top] != '(' &&
+                   priority(stack[top]) >= priority(ch))
+            {
+                postfix[j++] = pop();
+            }
+
+            push(ch);
+        }
     }
 
-    return stack[top--];
+    // Pop remaining operators
+    while (top != -1)
+        postfix[j++] = pop();
+
+    postfix[j] = '\0';
 }
 
 // Evaluate postfix expression
 int evaluatePostfix(char postfix[])
 {
+    int values[MAX];
+    int valueTop = -1;
     int i, op1, op2, result;
 
     for (i = 0; postfix[i] != '\0'; i++)
     {
-        // If operand, push it into stack
+        // Push operands
         if (isdigit(postfix[i]))
         {
-            push(postfix[i] - '0');
+            values[++valueTop] = postfix[i] - '0';
         }
-        // If operator, pop two operands
+
+        // Perform operation
         else
         {
-            op2 = pop();
-            op1 = pop();
+            op2 = values[valueTop--];
+            op1 = values[valueTop--];
 
             switch (postfix[i])
             {
@@ -70,30 +127,32 @@ int evaluatePostfix(char postfix[])
                 case '%':
                     result = op1 % op2;
                     break;
-
-                default:
-                    printf("Invalid operator\n");
-                    exit(1);
             }
 
-            push(result);
+            // Push result back
+            values[++valueTop] = result;
         }
     }
 
-    return pop();
+    return values[valueTop];
 }
 
 int main()
 {
-    char postfix[MAX];
+    char infix[MAX], postfix[MAX];
 
-    printf("Enter postfix expression: ");
-    scanf("%s", postfix);
+    // Take normal expression from user
+    printf("Enter infix expression: ");
+    scanf("%s", infix);
 
-    printf("Result = %d\n", evaluatePostfix(postfix));
+    // Convert infix to postfix
+    infixToPostfix(infix, postfix);
+
+    // Display postfix expression
+    printf("Postfix expression: %s\n", postfix);
+
+    // Evaluate postfix expression
+    printf("Result: %d\n", evaluatePostfix(postfix));
 
     return 0;
 }
-
-// The program scans the postfix expression, pushes operands onto the stack, and whenever it finds an operator, 
-// it pops two operands, performs the operation, and pushes the result back. The final value in the stack is the answer.
