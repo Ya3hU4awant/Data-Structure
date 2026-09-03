@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+
 #define MAX 100
 
 char stack[MAX];
